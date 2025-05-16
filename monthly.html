@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Monthly Task Tracker 2025</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    h1 { margin-bottom: 10px; }
+    .calendar-container {
+      display: flex;
+      flex-direction: column;
+      gap: 30px;
+      align-items: stretch;
+    }
+    .month-block {
+      border: 1px solid #ccc;
+      border-radius: 12px;
+      width: 100%;
+      margin-bottom: 30px;
+      background: #fff;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+      max-width: auto;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    .month-header {
+      text-align: center;
+      font-size: 1.2em;
+      font-weight: bold;
+      padding: 10px 0 8px 0;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      letter-spacing: 1px;
+    }
+    .calendar-table {
+      width: 100%;
+      border-collapse: collapse;
+      background: #fff;
+    }
+    .calendar-table th, .calendar-table td {
+      border: 1px solid #eee;
+      width: 14.28%;
+      height: 60px;
+      vertical-align: top;
+      padding: 3px 4px;
+      font-size: 0.95em;
+      position: relative;
+    }
+    .calendar-table th {
+      background: #f8f8f8;
+      font-weight: normal;
+      color: #666;
+      font-size: 0.9em;
+      text-align: center;
+      padding: 6px 0;
+    }
+    .day-number {
+      font-weight: bold;
+      font-size: 1em;
+      margin-bottom: 2px;
+      display: block;
+    }
+    .task-badge {
+      display: block;         /* Each badge on its own line */
+      color: #333;
+      border-radius: 8px;
+      padding: 2px 7px;
+      font-size: 0.92em;
+      margin: 2px 0 0 0;
+      cursor: pointer;
+      transition: background 0.2s;
+      border: 1px solid #b0b0b0;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+      max-width: 95%;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      white-space: nowrap;
+      background: #BAE1FF; /* fallback */
+    }
+    .task-badge:hover {
+      filter: brightness(0.97);
+    }
+    .task-badge.status-NotStarted { background: #F5A7A7; }
+    .task-badge.status-InProgress { background: #FFDFA0; }
+    .task-badge.status-Completed  { background: #C6F1A8; }
+    .task-badge.status-Deferred   { background: #B6D3FF; }
+    .back-btn {
+      position: absolute;
+      top: 20px;
+      right: 30px;
+      background: #FFB3BA;
+      color: #222;
+      font-weight: bold;
+      text-decoration: none;
+      padding: 10px 18px;
+      border-radius: 8px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+      transition: background 0.2s;
+    }
+    .back-btn:hover {
+      background: #BAFFC9;
+    }
+    /* Modal styles */
+    .modal-bg {
+      display: none;
+      position: fixed;
+      z-index: 9999;
+      left: 0; top: 0; width: 100vw; height: 100vh;
+      background: rgba(0,0,0,0.23);
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-bg.active {
+      display: flex;
+    }
+    .modal-content {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px 30px 18px 30px;
+      min-width: 320px;
+      max-width: 95vw;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.16);
+      position: relative;
+      font-size: 1.06em;
+      animation: modalIn 0.23s;
+    }
+    @keyframes modalIn {
+      from { transform: translateY(40px) scale(0.97); opacity: 0; }
+      to { transform: translateY(0) scale(1); opacity: 1; }
+    }
+    .modal-close {
+      position: absolute;
+      top: 10px;
+      right: 18px;
+      color: #888;
+      font-size: 1.4em;
+      font-weight: bold;
+      cursor: pointer;
+      border: none;
+      background: none;
+      transition: color 0.2s;
+    }
+    .modal-close:hover {
+      color: #E57373;
+    }
+    .modal-title {
+      font-size: 1.15em;
+      font-weight: bold;
+      margin-bottom: 10px;
+      color: #333;
+    }
+    .modal-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 4px;
+    }
+    .modal-table td {
+      padding: 3px 8px 3px 0;
+      border: none;
+      vertical-align: top;
+      color: #444;
+    }
+    .modal-table td.label {
+      font-weight: bold;
+      color: #888;
+      padding-right: 10px;
+      white-space: nowrap;
+    }
+    .past-date {
+      background: #f2f0f0 !important;
+    }
+  </style>
+</head>
+<body>
+  <a href="index.html" class="back-btn">Weekly Task Tracker</a>
+  <h1>Monthly Task Tracker - 2025</h1>
+  <div class="calendar-container" id="calendar-container"></div>
+  <!-- Modal for task details -->
+  <div class="modal-bg" id="modal-bg">
+    <div class="modal-content" id="modal-content">
+      <button class="modal-close" id="modal-close" title="Close">&times;</button>
+      <!-- Details inserted here -->
+    </div>
+  </div>
+  <script>
+    // Pastel rainbow colors for each month (Jan-Dec)
+    const monthColors = {
+      0:  '#FFB3BA', // January - pastel red
+      1:  '#FFDFBA', // February - pastel orange
+      2:  '#FFFFBA', // March - pastel yellow
+      3:  '#BAFFC9', // April - pastel green
+      4:  '#BAE1FF', // May - pastel blue
+      5:  '#D7BAFF', // June - pastel indigo
+      6:  '#E0BAFF', // July - pastel violet
+      7:  '#FFBAF2', // August - pastel pink
+      8:  '#FFC9BA', // September - pastel peach
+      9:  '#FFFABA', // October - pastel lemon
+      10: '#BAFFD9', // November - pastel mint
+      11: '#BAE0FF'  // December - pastel sky blue
+    };
+
+    // Storage key (same as weekly tracker)
+    const STORAGE_KEY = 'weekly_task_tracker_data_2025';
+
+    // Weekly tracker fields
+    const fields = [
+      { key: "project", label: "Project", type: "text" },
+      { key: "task", label: "Task", type: "text" },
+      { key: "valueAdd", label: "Value Add", type: "text" },
+      { key: "priority", label: "Priority", type: "select", options: ["Low", "Medium", "High", "Critical"] },
+      { key: "status", label: "Status", type: "select", options: ["Not Started", "In Progress", "Completed", "Deferred"] },
+      { key: "startDate", label: "Start Date", type: "date" },
+      { key: "endDate", label: "End Date", type: "date" },
+      { key: "percentComplete", label: "% Complete", type: "number", min: 0, max: 100 },
+      { key: "barriers", label: "Barriers", type: "text" }
+    ];
+
+    // Helper: format as YYYY-MM-DD
+    function formatDateISO(date) {
+      return date.toISOString().split('T')[0];
+    }
+
+    // Helper: format as Month Day, Year
+    function formatDateLong(date) {
+      return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+    }
+
+    // Load all tasks from weekly tracker
+    function loadAllTasks() {
+      let allData = [];
+      try {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) {
+          allData = JSON.parse(saved);
+        }
+      } catch {}
+      return allData;
+    }
+
+    // Get all tasks as flat array, with start dates
+    function getAllTasksWithStartDates() {
+      const allData = loadAllTasks();
+      let allTasks = [];
+      for (let weekIndex = 0; weekIndex < allData.length; weekIndex++) {
+        for (const row of allData[weekIndex] || []) {
+          // Only add if task has a name and a valid start date
+          if (row && row.task && row.task.trim() && row.startDate) {
+            let start = new Date(row.startDate);
+            // Convert "Blocked" status to "Deferred" if present
+            let status = row.status === "Blocked" ? "Deferred" : row.status;
+            allTasks.push({
+              ...row,
+              startDate: start,
+              status: status,
+              _weekIndex: weekIndex
+            });
+          }
+        }
+      }
+      return allTasks;
+    }
+
+    // For a given date, get all tasks whose startDate matches that date
+    function getTasksForDate(date, allTasks) {
+      const dateStr = formatDateISO(date);
+      return allTasks.filter(task => {
+        if (!task.startDate) return false;
+        return formatDateISO(task.startDate) === dateStr;
+      });
+    }
+
+    // Modal logic
+    function showModal(task, dateObj) {
+      const modalBg = document.getElementById('modal-bg');
+      const modalContent = document.getElementById('modal-content');
+      // Build modal HTML
+      let html = `<div class="modal-title">${task.task || '(No Task Name)'}</div>
+        <table class="modal-table">`;
+      for (const field of fields) {
+        if (field.key === "task") continue; // Already shown as title
+        let val = task[field.key];
+        if (!val) continue;
+        if (field.key === "startDate" || field.key === "endDate") {
+          try {
+            val = formatDateLong(new Date(val));
+          } catch {}
+        }
+        // Show "Deferred" instead of "Blocked"
+        if (field.key === "status" && val === "Blocked") val = "Deferred";
+        html += `<tr>
+          <td class="label">${field.label}:</td>
+          <td>${val}</td>
+        </tr>`;
+      }
+      html += `</table>`;
+      modalContent.querySelector('.modal-title')?.remove();
+      modalContent.querySelector('.modal-table')?.remove();
+      modalContent.insertAdjacentHTML('afterbegin', html);
+      modalBg.classList.add('active');
+    }
+    function hideModal() {
+      document.getElementById('modal-bg').classList.remove('active');
+    }
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('modal-close').onclick = hideModal;
+      document.getElementById('modal-bg').onclick = function(e) {
+        if (e.target === this) hideModal();
+      };
+      document.addEventListener('keydown', function(e){
+        if (e.key === "Escape") hideModal();
+      });
+    });
+
+    // Render the full year calendar
+    function renderCalendar2025() {
+      const container = document.getElementById('calendar-container');
+      container.innerHTML = '';
+      const year = 2025;
+      const allTasks = getAllTasksWithStartDates();
+
+      for (let month = 0; month < 12; month++) {
+        // Get number of days in month
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        // Get first day of week (0=Sun, 1=Mon, ...)
+        const firstDayOfWeek = new Date(year, month, 1).getDay();
+
+        // Month header
+        const monthName = new Date(year, month, 1).toLocaleString('en-US', { month: 'long' });
+        const headerColor = monthColors[month];
+
+        // Build calendar table
+        let table = `<table class="calendar-table"><thead><tr>`;
+        const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+        for (let d = 0; d < 7; d++) {
+          table += `<th>${weekDays[d]}</th>`;
+        }
+        table += `</tr></thead><tbody>`;
+
+        let day = 1;
+        let started = false;
+        // 6 weeks max in a month
+        for (let week = 0; week < 6; week++) {
+          table += '<tr>';
+          for (let dow = 0; dow < 7; dow++) {
+            if (!started && dow === firstDayOfWeek) started = true;
+            if (started && day <= daysInMonth) {
+              // Build date object
+              const dateObj = new Date(year, month, day);
+              const today = new Date();
+              today.setHours(0,0,0,0);
+              const isPast = dateObj < today;
+              const tasks = getTasksForDate(dateObj, allTasks);
+              table += `<td${isPast ? ' class="past-date"' : ''}>
+                <span class="day-number">${day}</span>
+                <div class="task-badges">
+                  ${tasks.map((t, i) => {
+                    let statusClass = "";
+                    if (t.status === "Not Started") statusClass = "status-NotStarted";
+                    else if (t.status === "In Progress") statusClass = "status-InProgress";
+                    else if (t.status === "Completed") statusClass = "status-Completed";
+                    else if (t.status === "Deferred" || t.status === "Blocked") statusClass = "status-Deferred";
+                    return `<span class="task-badge ${statusClass}" title="Click for details" onclick="showModalForTask(${month},${day},${i})">${t.task}</span>`;
+                  }).join('')}
+                </div>
+              </td>`;
+              day++;
+            } else {
+              table += '<td></td>';
+            }
+          }
+          table += '</tr>';
+          if (day > daysInMonth) break;
+        }
+        table += '</tbody></table>';
+
+        // Month block
+        const monthBlock = document.createElement('div');
+        monthBlock.className = 'month-block';
+        monthBlock.innerHTML = `
+          <div class="month-header" id="month-${month+1}" style="background:${headerColor};">${monthName} 2025</div>
+          ${table}
+        `;
+        container.appendChild(monthBlock);
+      }
+
+      // Expose showModalForTask globally for inline onclick
+      window.showModalForTask = function(month, day, idx) {
+        const year = 2025;
+        const dateObj = new Date(year, month, day);
+        const tasks = getTasksForDate(dateObj, allTasks);
+        if (tasks[idx]) showModal(tasks[idx], dateObj);
+      };
+    }
+
+    // After rendering, scroll to the current month
+    function scrollToCurrentMonth() {
+      const today = new Date();
+      if (today.getFullYear() !== 2025) return; // Only scroll in 2025
+      const monthNum = today.getMonth() + 1; // 1-based
+      const monthHeader = document.getElementById(`month-${monthNum}`);
+      if (monthHeader) {
+        setTimeout(() => {
+          monthHeader.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
+      }
+    }
+
+    renderCalendar2025();
+    scrollToCurrentMonth();
+  </script>
+</body>
+</html>
